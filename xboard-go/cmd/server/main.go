@@ -86,8 +86,9 @@ func main() {
 	r := gin.Default()
 
 	// CORS middleware
+	corsOrigins := cfg.Server.GetCORSOrigins()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Forwarded-For", "X-Real-IP"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -173,29 +174,6 @@ func main() {
 		nodeV2.GET("/alivelist", nodeHandler.GetAliveList)
 		nodeV2.POST("/status", nodeHandler.PushStatus)
 	}
-
-	// Serve static files for web UI
-	r.Static("/static", "./web/static")
-	r.LoadHTMLGlob("web/templates/*")
-
-	// Web UI routes
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index.html", gin.H{
-			"title": "Xboard Go",
-		})
-	})
-
-	r.GET("/login", func(c *gin.Context) {
-		c.HTML(200, "login.html", gin.H{
-			"title": "Login",
-		})
-	})
-
-	r.GET("/dashboard", func(c *gin.Context) {
-		c.HTML(200, "dashboard.html", gin.H{
-			"title": "Dashboard",
-		})
-	})
 
 	// Start server
 	addr := cfg.Server.GetAddress()

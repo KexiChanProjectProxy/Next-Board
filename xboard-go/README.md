@@ -11,7 +11,13 @@ A high-performance Go-based proxy management system that is fully wire-compatibl
 - **Telegram Bot**: Real-time usage notifications and threshold alerts
 - **Plan-Based User Management**: Flexible quota management with auto-reset periods
 - **RESTful API**: Clean JSON API for user and admin operations
-- **Web UI**: Minimal but functional web interface for dashboards
+- **Configurable CORS**: Fine-grained cross-origin resource sharing control
+
+## Documentation
+
+- **[API Documentation](API.md)** - Complete API reference with examples
+- **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes
+- **[Project Summary](PROJECT_SUMMARY.md)** - Architecture and design overview
 
 ## Architecture
 
@@ -25,14 +31,12 @@ xboard-go/
 │   ├── handler/         # HTTP handlers (controllers)
 │   ├── jobs/            # Background jobs
 │   ├── metrics/         # Prometheus metrics
-│   ├── middleware/      # Gin middleware (auth, node auth)
+│   ├── middleware/      # Gin middleware (auth, node auth, XFF)
 │   ├── models/          # Data models
 │   ├── repository/      # Data access layer
 │   ├── service/         # Business logic
 │   └── telegram/        # Telegram bot
 ├── migrations/          # Database migrations
-├── web/
-│   └── templates/       # HTML templates
 └── config.json          # Configuration file
 ```
 
@@ -123,7 +127,8 @@ Alternatively, edit `config.json`:
     "host": "",
     "port": "8080",
     "mode": "debug",
-    "trusted_proxies": ["127.0.0.1", "::1"]
+    "trusted_proxies": ["127.0.0.1", "::1"],
+    "cors_origins": ["*"]
   },
   "database": {
     "host": "localhost",
@@ -202,6 +207,68 @@ When configured correctly:
 2. Xboard Go validates nginx is in `trusted_proxies`
 3. Client IP extracted from `X-Forwarded-For` or `X-Real-IP` header
 4. Real client IP used for logging, rate limiting, and security
+
+### CORS Configuration
+
+Xboard Go supports configurable Cross-Origin Resource Sharing (CORS) for API access from web frontends.
+
+#### Configuration Options
+
+```json
+{
+  "server": {
+    "cors_origins": ["*"]
+  }
+}
+```
+
+**Common Configurations:**
+
+```json
+// Allow all origins (default, not recommended for production)
+"cors_origins": ["*"]
+
+// Allow specific domain
+"cors_origins": ["https://dashboard.example.com"]
+
+// Allow multiple domains
+"cors_origins": [
+  "https://dashboard.example.com",
+  "https://admin.example.com",
+  "http://localhost:3000"
+]
+```
+
+**Security Considerations:**
+
+- **Production**: Never use `["*"]` in production environments
+- **HTTPS Only**: For production, only allow HTTPS origins
+- **Specific Domains**: List only trusted frontend domains
+- **Credentials**: CORS is configured with `AllowCredentials: true` for cookie support
+
+**Allowed Methods:**
+- GET, POST, PUT, DELETE, OPTIONS
+
+**Allowed Headers:**
+- Origin
+- Content-Type
+- Authorization
+- X-Forwarded-For
+- X-Real-IP
+
+**Example Production Config:**
+
+```json
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": "8080",
+    "mode": "release",
+    "trusted_proxies": ["127.0.0.1"],
+    "cors_origins": ["https://dashboard.example.com"]
+  }
+}
+```
 
 ## Xboard Node Compatibility
 

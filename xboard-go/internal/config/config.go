@@ -20,6 +20,7 @@ type ServerConfig struct {
 	Port           string   `json:"port"`
 	Mode           string   `json:"mode"`
 	TrustedProxies []string `json:"trusted_proxies"`
+	CORSOrigins    []string `json:"cors_origins"`
 }
 
 func (s *ServerConfig) GetAddress() string {
@@ -27,6 +28,13 @@ func (s *ServerConfig) GetAddress() string {
 		return ":" + s.Port
 	}
 	return s.Host + ":" + s.Port
+}
+
+func (s *ServerConfig) GetCORSOrigins() []string {
+	if len(s.CORSOrigins) == 0 {
+		return []string{"*"}
+	}
+	return s.CORSOrigins
 }
 
 type DatabaseConfig struct {
