@@ -2,7 +2,7 @@
 
 ## Quick Start - One Command Migration
 
-### If Xboard is in Docker
+### If Xboard is in Docker (MariaDB or MySQL)
 
 ```bash
 cd /home/kexi/Next-Board/xboard-go/scripts && \
@@ -16,6 +16,8 @@ NEXTBOARD_DB=xboard_go \
 ```bash
 docker ps | grep xboard
 ```
+
+**Note**: The script automatically detects MariaDB in Docker and uses `mariadb-dump` and `mariadb` commands instead of `mysqldump` and `mysql`.
 
 ### If Xboard is Local (Not Docker)
 

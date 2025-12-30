@@ -24,7 +24,9 @@ XBOARD_DB=${XBOARD_DB:-xboard}
 NEXTBOARD_DB=${NEXTBOARD_DB:-xboard_go}
 XBOARD_DOCKER=${XBOARD_DOCKER:-}  # Docker container name (if Xboard is in Docker)
 MYSQL_USER=${MYSQL_USER:-root}
-MYSQL_CMD=${MYSQL_CMD:-mysql}  # Can be 'mysql' or 'mycli'
+MYSQL_CMD=${MYSQL_CMD:-mysql}  # Can be 'mysql' or 'mycli' or 'mariadb'
+MYSQLDUMP_CMD=${MYSQLDUMP_CMD:-mysqldump}  # Can be 'mysqldump' or 'mariadb-dump'
+MYSQL_PASS=""  # Will be prompted
 BACKUP_DIR="./backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
@@ -51,8 +53,12 @@ exec_mysql() {
     local sql="$@"
 
     if [ -n "$XBOARD_DOCKER" ] && [ "$db" = "$XBOARD_DB" ]; then
-        # Execute in Docker container
-        docker exec -i "$XBOARD_DOCKER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASS" "$db" -e "$sql" 2>/dev/null
+        # Execute in Docker container (use mariadb for MariaDB containers)
+        if [ -n "$MYSQL_PASS" ]; then
+            docker exec -i "$XBOARD_DOCKER" mariadb -u"$MYSQL_USER" -p"$MYSQL_PASS" "$db" -e "$sql" 2>/dev/null
+        else
+            docker exec -i "$XBOARD_DOCKER" mariadb -u"$MYSQL_USER" "$db" -e "$sql" 2>/dev/null
+        fi
     else
         # Execute locally
         $MYSQL_CMD -u"$MYSQL_USER" -p "$db" -e "$sql" 2>/dev/null
@@ -63,13 +69,23 @@ exec_mysql() {
 check_mysql() {
     local db=$1
     if [ -n "$XBOARD_DOCKER" ] && [ "$db" = "$XBOARD_DB" ]; then
-        # Check Docker container
-        if docker exec -i "$XBOARD_DOCKER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASS" -e "USE $db;" 2>/dev/null; then
-            echo -e "${GREEN}✓${NC} Connected to database: $db (in Docker: $XBOARD_DOCKER)"
-            return 0
+        # Check Docker container (use mariadb for MariaDB containers)
+        if [ -n "$MYSQL_PASS" ]; then
+            if docker exec -i "$XBOARD_DOCKER" mariadb -u"$MYSQL_USER" -p"$MYSQL_PASS" -e "USE $db;" 2>/dev/null; then
+                echo -e "${GREEN}✓${NC} Connected to database: $db (in Docker: $XBOARD_DOCKER)"
+                return 0
+            else
+                echo -e "${RED}✗${NC} Cannot connect to database: $db (in Docker: $XBOARD_DOCKER)"
+                return 1
+            fi
         else
-            echo -e "${RED}✗${NC} Cannot connect to database: $db (in Docker: $XBOARD_DOCKER)"
-            return 1
+            if docker exec -i "$XBOARD_DOCKER" mariadb -u"$MYSQL_USER" -e "USE $db;" 2>/dev/null; then
+                echo -e "${GREEN}✓${NC} Connected to database: $db (in Docker: $XBOARD_DOCKER)"
+                return 0
+            else
+                echo -e "${RED}✗${NC} Cannot connect to database: $db (in Docker: $XBOARD_DOCKER)"
+                return 1
+            fi
         fi
     else
         # Check local database
@@ -89,8 +105,12 @@ get_table_count() {
     local table=$2
 
     if [ -n "$XBOARD_DOCKER" ] && [ "$db" = "$XBOARD_DB" ]; then
-        # Get count from Docker
-        docker exec -i "$XBOARD_DOCKER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASS" -N -e "SELECT COUNT(*) FROM $db.$table;" 2>/dev/null || echo "0"
+        # Get count from Docker (use mariadb for MariaDB containers)
+        if [ -n "$MYSQL_PASS" ]; then
+            docker exec -i "$XBOARD_DOCKER" mariadb -u"$MYSQL_USER" -p"$MYSQL_PASS" -N -e "SELECT COUNT(*) FROM $db.$table;" 2>/dev/null || echo "0"
+        else
+            docker exec -i "$XBOARD_DOCKER" mariadb -u"$MYSQL_USER" -N -e "SELECT COUNT(*) FROM $db.$table;" 2>/dev/null || echo "0"
+        fi
     else
         # Get count from local
         $MYSQL_CMD -u"$MYSQL_USER" -p -N -e "SELECT COUNT(*) FROM $db.$table;" 2>/dev/null || echo "0"
@@ -102,13 +122,24 @@ get_table_count() {
 # ============================================================================
 print_header "Pre-flight Checks"
 
-echo -n "Checking MySQL credentials... "
-if ! mysql -u"$MYSQL_USER" -p -e "SELECT 1;" >/dev/null 2>&1; then
-    echo -e "${RED}Failed${NC}"
-    echo "Please ensure MySQL credentials are correct"
-    exit 1
+echo -n "Checking MySQL/MariaDB availability... "
+if [ -n "$XBOARD_DOCKER" ]; then
+    # Check if Docker container is running
+    if ! docker ps | grep -q "$XBOARD_DOCKER"; then
+        echo -e "${RED}Failed${NC}"
+        echo "Docker container '$XBOARD_DOCKER' is not running"
+        exit 1
+    fi
+    echo -e "${GREEN}OK${NC} (Docker container running)"
+else
+    # Check local MySQL
+    if ! $MYSQL_CMD -u"$MYSQL_USER" -p -e "SELECT 1;" >/dev/null 2>&1; then
+        echo -e "${RED}Failed${NC}"
+        echo "Please ensure MySQL/MariaDB credentials are correct"
+        exit 1
+    fi
+    echo -e "${GREEN}OK${NC}"
 fi
-echo -e "${GREEN}OK${NC}"
 
 echo ""
 echo "Configuration:"
@@ -140,12 +171,18 @@ echo "Backing up $XBOARD_DB..."
 if [ -n "$XBOARD_DOCKER" ]; then
     # Dump from Docker container
     echo "  (Dumping from Docker container: $XBOARD_DOCKER)"
-    read -sp "Enter MySQL password for Xboard: " MYSQL_PASS
+    read -sp "Enter MySQL/MariaDB password for Xboard (or press Enter if no password): " MYSQL_PASS
     echo ""
-    docker exec "$XBOARD_DOCKER" mysqldump -u"$MYSQL_USER" -p"$MYSQL_PASS" "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
+
+    # Use mariadb-dump for MariaDB containers
+    if [ -n "$MYSQL_PASS" ]; then
+        docker exec "$XBOARD_DOCKER" mariadb-dump -u"$MYSQL_USER" -p"$MYSQL_PASS" "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
+    else
+        docker exec "$XBOARD_DOCKER" mariadb-dump -u"$MYSQL_USER" "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
+    fi
 else
     # Dump from local
-    mysqldump -u"$MYSQL_USER" -p "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
+    $MYSQLDUMP_CMD -u"$MYSQL_USER" -p "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
 fi
 
 if [ $? -eq 0 ]; then
