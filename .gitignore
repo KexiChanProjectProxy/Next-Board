@@ -5,7 +5,8 @@
 *.so
 *.dylib
 bin/
-server
+/server
+**/bin/server
 
 # Test binary
 *.test
