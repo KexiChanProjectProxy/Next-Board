@@ -53,3 +53,6 @@ node_modules/
 # Temporary files
 tmp/
 temp/
+
+# Original Xboard (reference only, not part of this repo)
+Xboard/

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/KexiChanProjectProxy/Next-Board/xboard-go/internal/metrics"
 	"github.com/KexiChanProjectProxy/Next-Board/xboard-go/internal/models"
@@ -279,10 +278,7 @@ func (h *NodeHandler) getAllowedUsers(node *models.Node) ([]models.NodeUserDTO, 
 	// Find plans that allow any of these labels
 	var plans []models.Plan
 	if len(labelIDs) > 0 {
-		// Query plans that have plan_labels matching any of the node's labels
-		query := h.planRepo.(*repository.planRepository)
-		// This is a simplified version - in production you'd use a proper join
-		// For now, we'll load all plans and filter
+		// Load all plans and filter by matching labels
 		allPlans, _, _ := h.planRepo.List(0, 10000)
 		for _, plan := range allPlans {
 			planLabels, _ := h.planRepo.GetLabels(plan.ID)
@@ -304,12 +300,18 @@ func (h *NodeHandler) getAllowedUsers(node *models.Node) ([]models.NodeUserDTO, 
 	}
 
 	// Find users with these plans
+	// This is a simplified implementation - in production, use proper DB queries
 	var users []models.User
-	var db *gorm.DB
-	if userRepo, ok := h.userRepo.(*repository.userRepository); ok {
-		// Access the db field using reflection or add a method
-		// For simplicity, we'll query directly
-		// This is a workaround - in production code, add this method to the repository
+	allUsers, _, _ := h.userRepo.List(0, 10000)
+	for _, user := range allUsers {
+		if user.PlanID != nil {
+			for _, planID := range planIDs {
+				if *user.PlanID == planID {
+					users = append(users, user)
+					break
+				}
+			}
+		}
 	}
 
 	// Get UUIDs for users

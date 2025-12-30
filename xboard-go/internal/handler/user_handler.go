@@ -205,7 +205,7 @@ func (h *UserHandler) GetMyUsage(c *gin.Context) {
 }
 
 func (h *UserHandler) GetMyUsageHistory(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint64)
+	_ = c.MustGet("user_id").(uint64) // userID will be used when Prometheus integration is implemented
 
 	// Default to last 30 days
 	endTime := time.Now()

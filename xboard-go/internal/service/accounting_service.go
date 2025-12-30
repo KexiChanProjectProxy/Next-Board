@@ -80,12 +80,12 @@ func (s *accountingService) processUserTraffic(node *models.Node, report models.
 	}
 
 	// Ensure user has a current period
-	period, err := s.usageRepo.GetCurrentPeriod(user.ID)
+	_, err = s.usageRepo.GetCurrentPeriod(user.ID)
 	if err == gorm.ErrRecordNotFound {
 		if err := s.InitializeUserPeriod(user.ID); err != nil {
 			return err
 		}
-		period, err = s.usageRepo.GetCurrentPeriod(user.ID)
+		_, err = s.usageRepo.GetCurrentPeriod(user.ID)
 		if err != nil {
 			return err
 		}
