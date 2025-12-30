@@ -100,6 +100,7 @@ The application will start on `http://localhost:8080`
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `SERVER_HOST` | IP address to bind to (empty = all interfaces, or specific IP like 127.0.0.1) | (empty) |
 | `SERVER_PORT` | HTTP server port | 8080 |
 | `SERVER_MODE` | Gin mode (debug/release) | debug |
 | `DB_HOST` | Database host | localhost |
@@ -119,8 +120,10 @@ Alternatively, edit `config.json`:
 ```json
 {
   "server": {
+    "host": "",
     "port": "8080",
-    "mode": "debug"
+    "mode": "debug",
+    "trusted_proxies": ["127.0.0.1", "::1"]
   },
   "database": {
     "host": "localhost",
@@ -141,6 +144,64 @@ Alternatively, edit `config.json`:
   }
 }
 ```
+
+### Reverse Proxy Configuration
+
+Xboard Go supports reverse proxy deployments with proper client IP detection:
+
+#### Trusted Proxies
+
+Configure `trusted_proxies` to accept `X-Forwarded-For` and `X-Real-IP` headers from trusted sources:
+
+```json
+{
+  "server": {
+    "trusted_proxies": ["127.0.0.1", "::1", "10.0.0.1"]
+  }
+}
+```
+
+- Headers are **only** accepted from IPs in the trusted list
+- Supports both IPv4 and IPv6 addresses
+- Common values: `127.0.0.1` (localhost), `::1` (IPv6 localhost), private network IPs
+
+#### Bind Address
+
+Control which network interface the server binds to:
+
+```bash
+# Listen on all interfaces (default)
+SERVER_HOST=
+
+# Listen only on localhost (for reverse proxy setups)
+SERVER_HOST=127.0.0.1
+
+# Listen on specific IP
+SERVER_HOST=10.0.0.5
+```
+
+#### Example Nginx Configuration
+
+```nginx
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+When configured correctly:
+1. Nginx forwards requests to `127.0.0.1:8080`
+2. Xboard Go validates nginx is in `trusted_proxies`
+3. Client IP extracted from `X-Forwarded-For` or `X-Real-IP` header
+4. Real client IP used for logging, rate limiting, and security
 
 ## Xboard Node Compatibility
 
@@ -502,13 +563,20 @@ make migrate-down
 Internet
     ↓
 [Nginx/Caddy with SSL]
-    ↓
-[Xboard Go :8080]
+    ↓ (X-Forwarded-For, X-Real-IP)
+[Xboard Go 127.0.0.1:8080]
     ↓
 [MariaDB :3306]
 [Prometheus :9090]
 [Grafana :3000]
 ```
+
+**Configuration:**
+- Nginx listens on public IP (80/443)
+- Xboard Go binds to `127.0.0.1:8080` (localhost only)
+- `trusted_proxies: ["127.0.0.1"]` to accept XFF headers
+- SSL/TLS termination handled by Nginx
+- Real client IPs preserved for logging and security
 
 ## Troubleshooting
 
