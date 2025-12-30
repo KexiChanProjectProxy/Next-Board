@@ -16,8 +16,17 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port string `json:"port"`
-	Mode string `json:"mode"`
+	Host           string   `json:"host"`
+	Port           string   `json:"port"`
+	Mode           string   `json:"mode"`
+	TrustedProxies []string `json:"trusted_proxies"`
+}
+
+func (s *ServerConfig) GetAddress() string {
+	if s.Host == "" {
+		return ":" + s.Port
+	}
+	return s.Host + ":" + s.Port
 }
 
 type DatabaseConfig struct {
@@ -79,6 +88,9 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	// Override with environment variables if present
+	if host := os.Getenv("SERVER_HOST"); host != "" {
+		cfg.Server.Host = host
+	}
 	if port := os.Getenv("SERVER_PORT"); port != "" {
 		cfg.Server.Port = port
 	}

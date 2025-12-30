@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -90,10 +89,13 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Forwarded-For", "X-Real-IP"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
+
+	// Trusted proxy middleware (handles X-Forwarded-For from localhost)
+	r.Use(middleware.TrustedProxyMiddleware(cfg.Server.TrustedProxies))
 
 	// Prometheus metrics endpoint
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
@@ -196,7 +198,7 @@ func main() {
 	})
 
 	// Start server
-	addr := fmt.Sprintf(":%s", cfg.Server.Port)
+	addr := cfg.Server.GetAddress()
 	logger.Info("Starting server", zap.String("address", addr))
 
 	if err := r.Run(addr); err != nil {
