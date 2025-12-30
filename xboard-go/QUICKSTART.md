@@ -2,99 +2,45 @@
 
 Get Xboard Go running in 5 minutes!
 
-## Option 1: Docker Compose (Recommended)
-
-### 1. Clone and Configure
-
-```bash
-cd xboard-go
-cp .env.example .env
-```
-
-Edit `.env` and set at minimum:
-```bash
-JWT_SECRET=your-random-secret-here
-NODE_SERVER_TOKEN=your-node-token-here
-```
-
-### 2. Start Everything
-
-```bash
-docker-compose up -d
-```
-
-This starts:
-- MariaDB on port 3306
-- Prometheus on port 9090
-- Grafana on port 3000
-- Xboard Go on port 8080
-
-### 3. Run Migrations
-
-```bash
-docker-compose exec xboard-go migrate -path /app/migrations \
-  -database "mysql://xboard:xboard_password@tcp(mariadb:3306)/xboard_go" up
-```
-
-Or if you have `golang-migrate` installed locally:
-```bash
-make migrate-up
-```
-
-### 4. Create Admin User
-
-```bash
-# Connect to the database
-docker-compose exec mariadb mysql -uxboard -pxboard_password xboard_go
-
-# Run SQL
-INSERT INTO users (email, password_hash, role) VALUES
-('admin@example.com', '$2a$10$YourBcryptHashHere', 'admin');
-```
-
-Or use the API once the server is running:
-```bash
-# This requires an existing admin to call, so bootstrap the first one via SQL
-```
-
-### 5. Access the Services
-
-- **Web UI**: http://localhost:8080
-- **Login**: http://localhost:8080/login
-- **Dashboard**: http://localhost:8080/dashboard
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **API**: http://localhost:8080/api/v1
-
-## Option 2: Local Development
-
-### Prerequisites
+## Prerequisites
 
 - Go 1.24+
 - MariaDB 11.2+
-- (Optional) golang-migrate
+- (Optional) Prometheus for metrics
 
-### 1. Install Dependencies
+## Installation Steps
+
+### 1. Setup Database
+
+Install MariaDB 11.2+ and create the database:
+
+```bash
+# Install MariaDB (Ubuntu/Debian)
+sudo apt update
+sudo apt install mariadb-server
+
+# Or on macOS
+brew install mariadb
+brew services start mariadb
+
+# Create database and user
+mysql -u root -p
+```
+
+In the MySQL console:
+```sql
+CREATE DATABASE xboard_go;
+CREATE USER 'xboard'@'localhost' IDENTIFIED BY 'xboard_password';
+GRANT ALL PRIVILEGES ON xboard_go.* TO 'xboard'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### 2. Clone and Install Dependencies
 
 ```bash
 cd xboard-go
 go mod download
-```
-
-### 2. Start MariaDB
-
-```bash
-# Using Docker
-docker run -d \
-  --name xboard-mariadb \
-  -e MYSQL_ROOT_PASSWORD=rootpassword \
-  -e MYSQL_DATABASE=xboard_go \
-  -e MYSQL_USER=xboard \
-  -e MYSQL_PASSWORD=xboard_password \
-  -p 3306:3306 \
-  mariadb:11.2
-
-# Or use your existing MariaDB instance
 ```
 
 ### 3. Configure
@@ -124,12 +70,33 @@ go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 make migrate-up
 ```
 
-### 5. Run the Server
+### 5. Create Initial Admin User
+
+```bash
+# Connect to database
+mysql -u xboard -p xboard_go
+
+# Create admin user (password: admin123)
+INSERT INTO users (email, password_hash, role, banned, created_at, updated_at)
+VALUES (
+    'admin@example.com',
+    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    'admin',
+    0,
+    NOW(),
+    NOW()
+);
+```
+
+### 6. Run the Server
 
 ```bash
 make run
 # Or
 go run ./cmd/server
+# Or build and run
+make build
+./bin/server
 ```
 
 ## First Steps
@@ -243,7 +210,7 @@ Should return:
 **Error**: `Failed to connect to database`
 
 **Solution**:
-- Verify MariaDB is running: `docker ps` or `systemctl status mariadb`
+- Verify MariaDB is running: `systemctl status mariadb` or `brew services list`
 - Check credentials in `.env` or `config.json`
 - Test connection: `mysql -h localhost -u xboard -p xboard_go`
 
@@ -287,7 +254,7 @@ migrate -path migrations \
 - Read the full [README.md](README.md)
 - Check [Xboard compatibility docs](docs/xboard-compat.md)
 - Review API examples in README
-- Check application logs: `docker-compose logs xboard-go`
+- Check application logs in the terminal where server is running
 
 ## Security Checklist
 
@@ -307,20 +274,8 @@ Before going to production:
 ## Useful Commands
 
 ```bash
-# View logs
-docker-compose logs -f xboard-go
-
-# Restart service
-docker-compose restart xboard-go
-
-# Access database
-docker-compose exec mariadb mysql -uxboard -pxboard_password xboard_go
-
-# Run migrations
-make migrate-up
-
-# Rollback migrations
-make migrate-down
+# Run the application
+make run
 
 # Build binary
 make build
@@ -328,11 +283,24 @@ make build
 # Run tests
 make test
 
-# Stop all services
-docker-compose down
+# Run migrations
+make migrate-up
 
-# Clean volumes
-docker-compose down -v
+# Rollback migrations
+make migrate-down
+
+# Access database
+mysql -u xboard -p xboard_go
+
+# Check MariaDB status
+systemctl status mariadb
+# Or on macOS
+brew services list
+
+# Restart MariaDB
+sudo systemctl restart mariadb
+# Or on macOS
+brew services restart mariadb
 ```
 
 Enjoy using Xboard Go!

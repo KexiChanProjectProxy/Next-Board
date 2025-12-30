@@ -33,8 +33,7 @@ xboard-go/
 ├── migrations/          # Database migrations
 ├── web/
 │   └── templates/       # HTML templates
-├── config.json          # Configuration file
-└── docker-compose.yml   # Docker Compose setup
+└── config.json          # Configuration file
 ```
 
 ## Quick Start
@@ -43,11 +42,11 @@ xboard-go/
 
 - Go 1.24+
 - MariaDB 11.2+
-- (Optional) Docker & Docker Compose
+- Prometheus (optional, for metrics)
 
-### Local Development
+### Setup
 
-1. **Clone and setup**
+1. **Clone and configure**
 
 ```bash
 cd xboard-go
@@ -55,43 +54,45 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
-2. **Start dependencies**
+2. **Install dependencies**
 
 ```bash
-docker-compose up -d mariadb prometheus
+go mod download
 ```
 
-3. **Run migrations**
+3. **Setup database**
+
+Install MariaDB and create database:
+```bash
+mysql -u root -p
+CREATE DATABASE xboard_go;
+CREATE USER 'xboard'@'localhost' IDENTIFIED BY 'xboard_password';
+GRANT ALL PRIVILEGES ON xboard_go.* TO 'xboard'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+4. **Run migrations**
 
 ```bash
 # Install golang-migrate if not already installed
 # brew install golang-migrate (macOS)
-# Or download from https://github.com/golang-migrate/migrate
+# go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest (Linux)
 
 make migrate-up
 ```
 
-4. **Run the application**
+5. **Run the application**
 
 ```bash
 make run
 # Or
 go run ./cmd/server
+# Or build and run
+make build
+./bin/server
 ```
 
 The application will start on `http://localhost:8080`
-
-### Docker Deployment
-
-```bash
-docker-compose up -d
-```
-
-This starts:
-- MariaDB (port 3306)
-- Prometheus (port 9090)
-- Grafana (port 3000)
-- Xboard Go (port 8080)
 
 ## Configuration
 

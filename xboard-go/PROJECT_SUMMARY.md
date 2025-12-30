@@ -25,12 +25,12 @@ Xboard Go is a complete, production-ready Go implementation of a proxy managemen
 - [x] Minimal web UI (login, dashboard)
 
 ### ✅ DevOps
-- [x] Docker Compose setup
 - [x] Database migrations
 - [x] Comprehensive documentation
 - [x] Unit tests for core accounting logic
 - [x] Example configuration files
 - [x] Setup scripts
+- [x] Makefile for common tasks
 
 ## Project Structure
 
@@ -96,9 +96,6 @@ xboard-go/
 │
 ├── config.json                        # Main configuration file
 ├── .env.example                       # Environment variables example
-├── docker-compose.yml                 # Docker Compose setup
-├── Dockerfile                         # Application Dockerfile
-├── prometheus.yml                     # Prometheus configuration
 ├── Makefile                          # Build & run commands
 ├── go.mod                            # Go module definition
 ├── go.sum                            # Go module checksums
@@ -287,11 +284,13 @@ Traffic Report:
 
 ## Deployment Options
 
-### 1. Docker Compose (Development)
+### 1. Direct Execution (Development)
 ```bash
-docker-compose up -d
+make run
+# or
+go run ./cmd/server
 ```
-Includes: MariaDB, Prometheus, Grafana, Xboard Go
+Requires: MariaDB running locally
 
 ### 2. Standalone Binary (Production)
 ```bash
@@ -300,10 +299,20 @@ make build
 ```
 Requires: External MariaDB, Prometheus (optional)
 
-### 3. Docker Container (Production)
+### 3. Systemd Service (Production)
 ```bash
-docker build -t xboard-go .
-docker run -p 8080:8080 xboard-go
+# Build binary
+make build
+
+# Copy to system location
+sudo cp bin/server /usr/local/bin/xboard-go
+
+# Create systemd service file
+sudo nano /etc/systemd/system/xboard-go.service
+
+# Start service
+sudo systemctl enable xboard-go
+sudo systemctl start xboard-go
 ```
 
 ## Testing

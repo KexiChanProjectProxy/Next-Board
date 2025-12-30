@@ -1,0 +1,39 @@
+[Unit]
+Description=Xboard Go - Proxy Management System
+After=network.target mariadb.service
+Wants=mariadb.service
+
+[Service]
+Type=simple
+User=xboard
+Group=xboard
+WorkingDirectory=/opt/xboard-go
+ExecStart=/usr/local/bin/xboard-go
+Restart=always
+RestartSec=10
+
+# Environment variables
+Environment="SERVER_PORT=8080"
+Environment="SERVER_MODE=release"
+Environment="DB_HOST=localhost"
+Environment="DB_PORT=3306"
+Environment="DB_USER=xboard"
+Environment="DB_PASSWORD=xboard_password"
+Environment="DB_NAME=xboard_go"
+Environment="JWT_SECRET=change-this-in-production"
+Environment="NODE_SERVER_TOKEN=change-this-in-production"
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xboard-go
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=xboard-go
+
+[Install]
+WantedBy=multi-user.target

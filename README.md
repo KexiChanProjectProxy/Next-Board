@@ -30,7 +30,9 @@ Key features:
 
 ```bash
 cd xboard-go
-docker-compose up -d
+# Setup database first (see xboard-go/QUICKSTART.md)
+make migrate-up
+make run
 ```
 
 Access the web interface at `http://localhost:8080`
@@ -46,9 +48,9 @@ Access the web interface at `http://localhost:8080`
 
 - **Backend**: Go 1.24, Gin, GORM
 - **Database**: MariaDB 11.2
-- **Monitoring**: Prometheus, Grafana
+- **Monitoring**: Prometheus (optional)
 - **Bot**: Telegram Bot API
-- **Deployment**: Docker, Docker Compose
+- **Deployment**: Binary or systemd service
 
 ## License
 

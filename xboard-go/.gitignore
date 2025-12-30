@@ -43,6 +43,3 @@ config.json
 
 # Logs
 *.log
-
-# Docker volumes
-docker-volumes/
