@@ -1,0 +1,5 @@
+# This file will be auto-generated when you run:
+# go mod download
+# go mod tidy
+
+# For now, it's a placeholder to indicate where checksums will be stored

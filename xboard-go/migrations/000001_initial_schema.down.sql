@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS online_users;
+DROP TABLE IF EXISTS user_uuids;
+DROP TABLE IF EXISTS telegram_thresholds;
+DROP TABLE IF EXISTS node_usage;
+DROP TABLE IF EXISTS usage_periods;
+DROP TABLE IF EXISTS node_labels;
+DROP TABLE IF EXISTS nodes;
+DROP TABLE IF EXISTS plan_label_multipliers;
+DROP TABLE IF EXISTS plan_labels;
+DROP TABLE IF EXISTS plans;
+DROP TABLE IF EXISTS labels;
+DROP TABLE IF EXISTS users;

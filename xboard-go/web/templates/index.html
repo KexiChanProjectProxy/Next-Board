@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 { color: #333; margin-bottom: 1rem; }
+        p { color: #666; margin-bottom: 2rem; }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: transform 0.2s;
+            margin: 0.5rem;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .features {
+            margin-top: 2rem;
+            text-align: left;
+        }
+        .features h3 { color: #333; margin-bottom: 1rem; }
+        .features ul { list-style: none; }
+        .features li {
+            padding: 0.5rem 0;
+            color: #666;
+        }
+        .features li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Xboard Go</h1>
+        <p>High-performance proxy management system compatible with Xboard nodes</p>
+        <a href="/login" class="btn">Login</a>
+        <a href="/dashboard" class="btn">Dashboard</a>
+
+        <div class="features">
+            <h3>Features</h3>
+            <ul>
+                <li>Xboard node protocol compatible</li>
+                <li>Multi-label node management</li>
+                <li>Traffic multipliers</li>
+                <li>Prometheus metrics</li>
+                <li>Telegram notifications</li>
+                <li>Plan-based user management</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

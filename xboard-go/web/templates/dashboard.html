@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.5rem; }
+        .logout { color: white; text-decoration: none; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 { margin-bottom: 1rem; color: #333; }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .stat {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+        }
+        .stat-label { color: #666; font-size: 0.9rem; }
+        .stat-value { color: #333; font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem; }
+        .node-list { list-style: none; }
+        .node-item {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .node-name { font-weight: bold; color: #333; }
+        .node-type { color: #666; font-size: 0.9rem; }
+        .loading { text-align: center; padding: 2rem; color: #666; }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dashboard</h1>
+        <a href="#" class="logout" onclick="logout()">Logout</a>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Plan Information</h2>
+            <div id="planInfo" class="loading">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>Usage Statistics</h2>
+            <div id="usageStats" class="loading">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>Available Nodes</h2>
+            <div id="nodesList" class="loading">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>Telegram Settings</h2>
+            <button class="btn" onclick="generateTelegramLink()">Generate Link Token</button>
+            <div id="telegramToken" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+
+        function getToken() {
+            return localStorage.getItem('access_token');
+        }
+
+        async function apiCall(endpoint) {
+            const response = await fetch(API_BASE + endpoint, {
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return null;
+            }
+            return response.json();
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            window.location.href = '/login';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function loadPlanInfo() {
+            const data = await apiCall('/me/plan');
+            if (!data || !data.plan) {
+                document.getElementById('planInfo').innerHTML = '<p>No plan assigned</p>';
+                return;
+            }
+            const plan = data.plan;
+            document.getElementById('planInfo').innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat">
+                        <div class="stat-label">Plan Name</div>
+                        <div class="stat-value">${plan.name}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Quota</div>
+                        <div class="stat-value">${formatBytes(plan.quota_bytes)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Reset Period</div>
+                        <div class="stat-value">${plan.reset_period}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadUsageStats() {
+            const data = await apiCall('/me/usage');
+            if (!data || !data.usage) {
+                document.getElementById('usageStats').innerHTML = '<p>No usage data</p>';
+                return;
+            }
+            const usage = data.usage;
+            const totalReal = usage.real_bytes_up + usage.real_bytes_down;
+            const totalBillable = usage.billable_bytes_up + usage.billable_bytes_down;
+
+            document.getElementById('usageStats').innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat">
+                        <div class="stat-label">Real Upload</div>
+                        <div class="stat-value">${formatBytes(usage.real_bytes_up)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Real Download</div>
+                        <div class="stat-value">${formatBytes(usage.real_bytes_down)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Billable Upload</div>
+                        <div class="stat-value">${formatBytes(usage.billable_bytes_up)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Billable Download</div>
+                        <div class="stat-value">${formatBytes(usage.billable_bytes_down)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Total Real</div>
+                        <div class="stat-value">${formatBytes(totalReal)}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Total Billable</div>
+                        <div class="stat-value">${formatBytes(totalBillable)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadNodes() {
+            const data = await apiCall('/me/nodes');
+            if (!data || !data.nodes || data.nodes.length === 0) {
+                document.getElementById('nodesList').innerHTML = '<p>No nodes available</p>';
+                return;
+            }
+            const html = '<ul class="node-list">' + data.nodes.map(node => `
+                <li class="node-item">
+                    <div class="node-name">${node.name}</div>
+                    <div class="node-type">${node.node_type} - ${node.host}:${node.port}</div>
+                    <div class="node-type">Multiplier: ${node.node_multiplier}x</div>
+                </li>
+            `).join('') + '</ul>';
+            document.getElementById('nodesList').innerHTML = html;
+        }
+
+        async function generateTelegramLink() {
+            const data = await apiCall('/me/telegram/link');
+            if (data && data.link_token) {
+                document.getElementById('telegramToken').innerHTML = `
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 0.5rem;">
+                        <strong>Link Token:</strong> <code>${data.link_token}</code><br>
+                        <small>${data.instructions}</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Load all data on page load
+        window.addEventListener('load', () => {
+            if (!getToken()) {
+                window.location.href = '/login';
+                return;
+            }
+            loadPlanInfo();
+            loadUsageStats();
+            loadNodes();
+        });
+    </script>
+</body>
+</html>

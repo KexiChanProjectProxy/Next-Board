@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:11.2
+    container_name: xboard-go-mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: xboard_go
+      MYSQL_USER: xboard
+      MYSQL_PASSWORD: xboard_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: xboard-go-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: xboard-go-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  xboard-go:
+    build: .
+    container_name: xboard-go-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_USER: xboard
+      DB_PASSWORD: xboard_password
+      DB_NAME: xboard_go
+      JWT_SECRET: change-this-secret-in-production
+      NODE_SERVER_TOKEN: change-this-node-token
+      PROMETHEUS_URL: http://prometheus:9090
+      SERVER_PORT: 8080
+      SERVER_MODE: release
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    volumes:
+      - ./config.json:/app/config.json
+
+volumes:
+  mariadb_data:
+  prometheus_data:
+  grafana_data:
