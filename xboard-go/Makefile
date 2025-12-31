@@ -20,10 +20,10 @@ test:
 	go test -v ./...
 
 migrate-up:
-	migrate -path migrations -database "mysql://root@tcp(localhost:3306)/xboard" up
+	migrate -path migrations -database "mysql://root@unix(/var/run/mysqld/mysqld.sock)/xboard" up
 
 migrate-down:
-	migrate -path migrations -database "mysql://root@tcp(localhost:3306)/xboard" down
+	migrate -path migrations -database "mysql://root@unix(/var/run/mysqld/mysqld.sock)/xboard" down
 
 clean:
 	rm -rf bin/
