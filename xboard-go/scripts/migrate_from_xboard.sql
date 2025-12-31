@@ -1,7 +1,7 @@
 -- Migration Script: Xboard (PHP) to Next-Board (Go)
 --
 -- Prerequisites:
--- 1. Both databases should be accessible (source: xboard, target: xboard_go)
+-- 1. Both databases should be accessible (source: xboard, target: xboard)
 -- 2. Run Next-Board migrations first (make migrate-up)
 -- 3. Backup both databases before running this script
 --
@@ -10,9 +10,9 @@
 --
 -- This script assumes:
 -- - Source DB: xboard (Xboard PHP database)
--- - Target DB: xboard_go (Next-Board Go database)
+-- - Target DB: xboard (Next-Board Go database)
 
-USE xboard_go;
+USE xboard;
 
 -- ====================
 -- STEP 1: Migrate Labels (from server groups)

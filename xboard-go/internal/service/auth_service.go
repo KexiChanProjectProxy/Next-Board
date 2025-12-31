@@ -142,6 +142,14 @@ func (s *authService) HashPassword(password string) (string, error) {
 }
 
 func (s *authService) ComparePassword(hashedPassword, password string) error {
+	// PHP's password_hash() uses $2y$ prefix for bcrypt, but Go's bcrypt library
+	// only recognizes $2a$ and $2b$ prefixes. Since $2y$ and $2a$ are algorithmically
+	// identical (the difference is only in the version identifier), we can safely
+	// convert $2y$ to $2a$ for verification.
+	if len(hashedPassword) > 3 && hashedPassword[:4] == "$2y$" {
+		hashedPassword = "$2a$" + hashedPassword[4:]
+	}
+
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 

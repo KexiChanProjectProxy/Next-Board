@@ -23,15 +23,19 @@ echo "  ✓ Tokens - no re-authentication needed"
 echo "  ✓ Balances - financial data preserved"
 echo ""
 
-# Step 1: Dump v2_user from Docker
+# Clean up old temp files
+echo "Cleaning up old migration files..."
+rm -f /tmp/v2_user.sql /tmp/do_user_migration.sql
+
+# Step 1: Dump v2_user from Docker (data only, no CREATE TABLE)
 echo "[1/3] Dumping users from Xboard Docker..."
 read -sp "Enter MySQL password for Docker container (or press Enter if none): " DOCKER_MYSQL_PASS
 echo ""
 
 if [ -n "$DOCKER_MYSQL_PASS" ]; then
-    docker exec "$XBOARD_DOCKER" mariadb-dump -uroot -p"$DOCKER_MYSQL_PASS" "$XBOARD_DB" v2_user > /tmp/v2_user.sql
+    docker exec "$XBOARD_DOCKER" mariadb-dump -uroot -p"$DOCKER_MYSQL_PASS" --no-create-info --complete-insert "$XBOARD_DB" v2_user > /tmp/v2_user_data.sql
 else
-    docker exec "$XBOARD_DOCKER" mariadb-dump -uroot "$XBOARD_DB" v2_user > /tmp/v2_user.sql
+    docker exec "$XBOARD_DOCKER" mariadb-dump -uroot --no-create-info --complete-insert "$XBOARD_DB" v2_user > /tmp/v2_user_data.sql
 fi
 
 if [ $? -ne 0 ]; then
@@ -39,39 +43,65 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-USER_COUNT=$(grep "^INSERT INTO" /tmp/v2_user.sql | wc -l)
-echo "✓ Dumped users from Docker"
+USER_COUNT=$(grep "^INSERT INTO" /tmp/v2_user_data.sql | wc -l)
+echo "✓ Dumped $USER_COUNT user records from Docker"
 
 # Step 2: Create migration SQL
 echo "[2/3] Creating migration SQL..."
 cat > /tmp/do_user_migration.sql << 'EOF'
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Create temporary table with Xboard structure
+-- Disable strict mode to allow flexible data loading
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- Create temporary table matching v2_user structure
+DROP TEMPORARY TABLE IF EXISTS v2_user;
 CREATE TEMPORARY TABLE v2_user (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(64),
-    password VARCHAR(64),
-    is_admin BOOLEAN DEFAULT FALSE,
-    plan_id INT,
+    id INT PRIMARY KEY,
+    invite_user_id INT,
     telegram_id BIGINT,
-    banned BOOLEAN DEFAULT FALSE,
-    balance INT DEFAULT 0,
+    email VARCHAR(255),
+    password VARCHAR(255),
+    password_algo VARCHAR(255),
+    password_salt VARCHAR(255),
+    balance INT,
     discount INT,
-    commission_type TINYINT DEFAULT 0,
+    commission_type TINYINT,
     commission_rate INT,
-    commission_balance INT DEFAULT 0,
-    token VARCHAR(32),
+    commission_balance INT,
+    t BIGINT,
+    u BIGINT,
+    d BIGINT,
+    transfer_enable BIGINT,
+    banned TINYINT,
+    is_admin TINYINT,
     last_login_at INT,
-    last_login_ip INT,
+    is_staff TINYINT,
+    last_login_ip INT UNSIGNED,
+    uuid VARCHAR(36),
+    group_id INT,
+    plan_id INT,
+    speed_limit INT,
+    remind_expire TINYINT,
+    remind_traffic TINYINT,
+    token VARCHAR(32),
+    expired_at INT,
+    next_reset_at INT,
+    last_reset_at INT,
+    reset_count INT,
+    device_limit INT,
+    online_count INT,
+    last_online_at TIMESTAMP,
     remarks TEXT,
     created_at INT,
-    updated_at INT,
-    uuid VARCHAR(36)
+    updated_at INT
 );
 
--- Load Xboard dump into temporary table
-SOURCE /tmp/v2_user.sql;
+-- Load data from dump
+SOURCE /tmp/v2_user_data.sql;
+
+-- Restore SQL mode
+SET SQL_MODE=@OLD_SQL_MODE;
 
 -- Migrate to Next-Board users table
 INSERT INTO users (
@@ -136,7 +166,7 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO user_uuids (user_id, uuid, created_at)
 SELECT u.id, v.uuid, NOW()
 FROM v2_user v
-JOIN users u ON u.email = v.email
+JOIN users u ON u.email COLLATE utf8mb4_unicode_ci = v.email COLLATE utf8mb4_unicode_ci
 WHERE v.uuid IS NOT NULL AND v.uuid != ''
 ON DUPLICATE KEY UPDATE uuid=VALUES(uuid);
 
