@@ -19,10 +19,12 @@ test:
 	go test -v ./...
 
 migrate-up:
-	migrate -path migrations -database "mysql://xboard:xboard_password@tcp(localhost:3306)/xboard_go" up
+	@read -sp "Enter MySQL root password: " MYSQL_PASSWORD && echo "" && \
+	migrate -path migrations -database "mysql://root:$$MYSQL_PASSWORD@tcp(localhost:3306)/xboard" up
 
 migrate-down:
-	migrate -path migrations -database "mysql://xboard:xboard_password@tcp(localhost:3306)/xboard_go" down
+	@read -sp "Enter MySQL root password: " MYSQL_PASSWORD && echo "" && \
+	migrate -path migrations -database "mysql://root:$$MYSQL_PASSWORD@tcp(localhost:3306)/xboard" down
 
 clean:
 	rm -rf bin/
