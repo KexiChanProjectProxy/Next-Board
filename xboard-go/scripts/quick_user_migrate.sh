@@ -114,7 +114,23 @@ SELECT
     FROM_UNIXTIME(created_at),
     FROM_UNIXTIME(updated_at)
 FROM v2_user
-ON DUPLICATE KEY UPDATE email=email;
+ON DUPLICATE KEY UPDATE
+    password_hash=VALUES(password_hash),
+    role=VALUES(role),
+    plan_id=VALUES(plan_id),
+    telegram_chat_id=VALUES(telegram_chat_id),
+    telegram_linked_at=VALUES(telegram_linked_at),
+    banned=VALUES(banned),
+    balance=VALUES(balance),
+    discount=VALUES(discount),
+    commission_type=VALUES(commission_type),
+    commission_rate=VALUES(commission_rate),
+    commission_balance=VALUES(commission_balance),
+    token=VALUES(token),
+    last_login_at=VALUES(last_login_at),
+    last_login_ip=VALUES(last_login_ip),
+    remarks=VALUES(remarks),
+    updated_at=VALUES(updated_at);
 
 -- Migrate UUIDs
 INSERT INTO user_uuids (user_id, uuid, created_at)
@@ -122,7 +138,7 @@ SELECT u.id, v.uuid, NOW()
 FROM v2_user v
 JOIN users u ON u.email = v.email
 WHERE v.uuid IS NOT NULL AND v.uuid != ''
-ON DUPLICATE KEY UPDATE uuid=uuid;
+ON DUPLICATE KEY UPDATE uuid=VALUES(uuid);
 
 SET FOREIGN_KEY_CHECKS = 1;
 
