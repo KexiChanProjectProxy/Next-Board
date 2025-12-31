@@ -16,10 +16,31 @@ fi
 
 echo "🚀 Quick User Migration Starting..."
 echo ""
+echo "What will be migrated:"
+echo "  ✓ Users (email, password) - can login immediately"
+echo "  ✓ UUIDs - subscription URLs work immediately"
+echo "  ✓ Tokens - no re-authentication needed"
+echo "  ✓ Balances - financial data preserved"
+echo ""
 
 # Step 1: Dump v2_user from Docker
 echo "[1/3] Dumping users from Xboard Docker..."
-docker exec "$XBOARD_DOCKER" mariadb-dump -uroot "$XBOARD_DB" v2_user > /tmp/v2_user.sql
+read -sp "Enter MySQL password for Docker container (or press Enter if none): " DOCKER_MYSQL_PASS
+echo ""
+
+if [ -n "$DOCKER_MYSQL_PASS" ]; then
+    docker exec "$XBOARD_DOCKER" mariadb-dump -uroot -p"$DOCKER_MYSQL_PASS" "$XBOARD_DB" v2_user > /tmp/v2_user.sql
+else
+    docker exec "$XBOARD_DOCKER" mariadb-dump -uroot "$XBOARD_DB" v2_user > /tmp/v2_user.sql
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to dump users from Docker"
+    exit 1
+fi
+
+USER_COUNT=$(grep "^INSERT INTO" /tmp/v2_user.sql | wc -l)
+echo "✓ Dumped users from Docker"
 
 # Step 2: Create migration SQL
 echo "[2/3] Creating migration SQL..."
@@ -108,6 +129,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Summary
 SELECT '✓ Migration Complete' as Status;
 SELECT COUNT(*) as 'Total Users' FROM users;
+SELECT COUNT(*) as 'UUIDs Migrated' FROM user_uuids;
 SELECT COUNT(*) as 'With Tokens' FROM users WHERE token IS NOT NULL;
 SELECT COUNT(*) as 'Admins' FROM users WHERE role = 'admin';
 SELECT SUM(balance)/100 as 'Total Balance (currency units)' FROM users;
@@ -118,6 +140,16 @@ echo "[3/3] Migrating users..."
 mysql -uroot "$NEXTBOARD_DB" < /tmp/do_user_migration.sql
 
 echo ""
-echo "✅ Done! Users can now login with their existing credentials."
+echo "✅ Migration Complete!"
+echo ""
+echo "What works now:"
+echo "  ✓ Users can login with existing email/password"
+echo "  ✓ Subscription URLs work immediately (UUIDs preserved)"
+echo "  ✓ User tokens preserved (no re-authentication needed)"
+echo "  ✓ Balances and commissions preserved"
+echo ""
+echo "Next steps:"
+echo "  1. Update node remote URLs to point to Next-Board"
+echo "  2. Users can use nodes immediately (no sub update needed)"
 echo ""
 echo "Cleanup: rm /tmp/v2_user.sql /tmp/do_user_migration.sql"
