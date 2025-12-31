@@ -10,6 +10,9 @@ import { NodesPage } from '@/pages/user/NodesPage';
 import { UsagePage } from '@/pages/user/UsagePage';
 import { SettingsPage } from '@/pages/user/SettingsPage';
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage';
+import { AdminNodesPage } from '@/pages/admin/AdminNodesPage';
+import { AdminPlansPage } from '@/pages/admin/AdminPlansPage';
+import { AdminLabelsPage } from '@/pages/admin/AdminLabelsPage';
 
 function App() {
   const { isAuthenticated, fetchUser } = useAuthStore();
@@ -84,10 +87,7 @@ function App() {
           element={
             <ProtectedRoute requireAdmin>
               <DashboardLayout>
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Admin Nodes Management</h2>
-                  <p className="text-muted-foreground mt-2">Coming soon...</p>
-                </div>
+                <AdminNodesPage />
               </DashboardLayout>
             </ProtectedRoute>
           }
@@ -97,10 +97,7 @@ function App() {
           element={
             <ProtectedRoute requireAdmin>
               <DashboardLayout>
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Admin Plans Management</h2>
-                  <p className="text-muted-foreground mt-2">Coming soon...</p>
-                </div>
+                <AdminPlansPage />
               </DashboardLayout>
             </ProtectedRoute>
           }
@@ -110,10 +107,7 @@ function App() {
           element={
             <ProtectedRoute requireAdmin>
               <DashboardLayout>
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Admin Labels Management</h2>
-                  <p className="text-muted-foreground mt-2">Coming soon...</p>
-                </div>
+                <AdminLabelsPage />
               </DashboardLayout>
             </ProtectedRoute>
           }

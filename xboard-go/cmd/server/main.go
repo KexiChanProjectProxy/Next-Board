@@ -140,14 +140,23 @@ func main() {
 		// Nodes
 		adminGroup.POST("/nodes", adminHandler.CreateNode)
 		adminGroup.GET("/nodes", adminHandler.ListNodes)
+		adminGroup.GET("/nodes/:id", adminHandler.GetNode)
+		adminGroup.PUT("/nodes/:id", adminHandler.UpdateNode)
+		adminGroup.DELETE("/nodes/:id", adminHandler.DeleteNode)
 
 		// Plans
 		adminGroup.POST("/plans", adminHandler.CreatePlan)
 		adminGroup.GET("/plans", adminHandler.ListPlans)
+		adminGroup.GET("/plans/:id", adminHandler.GetPlan)
+		adminGroup.PUT("/plans/:id", adminHandler.UpdatePlan)
+		adminGroup.DELETE("/plans/:id", adminHandler.DeletePlan)
 
 		// Labels
 		adminGroup.POST("/labels", adminHandler.CreateLabel)
 		adminGroup.GET("/labels", adminHandler.ListLabels)
+		adminGroup.GET("/labels/:id", adminHandler.GetLabel)
+		adminGroup.PUT("/labels/:id", adminHandler.UpdateLabel)
+		adminGroup.DELETE("/labels/:id", adminHandler.DeleteLabel)
 	}
 
 	// Node protocol endpoints (Xboard-compatible)
