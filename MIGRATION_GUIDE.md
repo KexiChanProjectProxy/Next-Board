@@ -6,6 +6,11 @@ This guide will help you migrate your existing Xboard instance data to Next-Boar
 
 **What gets migrated:**
 - ✅ Users (email, passwords, roles, plan assignments, telegram links)
+- ✅ User balances and credits (balance, commission_balance, discount)
+- ✅ User tokens (API tokens for authentication)
+- ✅ User commission settings (commission_type, commission_rate)
+- ✅ Login tracking (last_login_at, last_login_ip)
+- ✅ User remarks and notes
 - ✅ Plans (quota, reset periods)
 - ✅ Server Groups → Labels
 - ✅ Nodes (all protocol types)
@@ -15,7 +20,6 @@ This guide will help you migrate your existing Xboard instance data to Next-Boar
 - ❌ Historical traffic statistics
 - ❌ Orders and payments
 - ❌ Tickets and knowledge base
-- ❌ User tokens (users need to re-login)
 
 ## Prerequisites
 

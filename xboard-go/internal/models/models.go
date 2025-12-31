@@ -5,17 +5,26 @@ import (
 )
 
 type User struct {
-	ID               uint64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	Email            string     `gorm:"uniqueIndex;not null" json:"email"`
-	PasswordHash     string     `gorm:"not null" json:"-"`
-	Role             string     `gorm:"type:enum('admin','user');default:'user'" json:"role"`
-	PlanID           *uint64    `gorm:"index" json:"plan_id"`
-	Plan             *Plan      `gorm:"foreignKey:PlanID" json:"plan,omitempty"`
-	TelegramChatID   *int64     `gorm:"index" json:"telegram_chat_id"`
-	TelegramLinkedAt *time.Time `json:"telegram_linked_at"`
-	Banned           bool       `gorm:"default:false" json:"banned"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
+	ID                uint64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	Email             string     `gorm:"uniqueIndex;not null" json:"email"`
+	PasswordHash      string     `gorm:"not null" json:"-"`
+	Role              string     `gorm:"type:enum('admin','user');default:'user'" json:"role"`
+	PlanID            *uint64    `gorm:"index" json:"plan_id"`
+	Plan              *Plan      `gorm:"foreignKey:PlanID" json:"plan,omitempty"`
+	TelegramChatID    *int64     `gorm:"index" json:"telegram_chat_id"`
+	TelegramLinkedAt  *time.Time `json:"telegram_linked_at"`
+	Banned            bool       `gorm:"default:false" json:"banned"`
+	Balance           int        `gorm:"default:0" json:"balance"`                     // Balance in cents
+	Discount          *int       `json:"discount"`                                     // Discount percentage
+	CommissionType    int        `gorm:"default:0" json:"commission_type"`             // 0: system 1: period 2: onetime
+	CommissionRate    *int       `json:"commission_rate"`                              // Commission rate percentage
+	CommissionBalance int        `gorm:"default:0" json:"commission_balance"`          // Commission balance in cents
+	Token             *string    `gorm:"index;size:32" json:"token,omitempty"`         // User API token
+	LastLoginAt       *time.Time `gorm:"index" json:"last_login_at"`                   // Last login timestamp
+	LastLoginIP       *string    `gorm:"size:45" json:"last_login_ip"`                 // Last login IP address
+	Remarks           *string    `gorm:"type:text" json:"remarks,omitempty"`           // Admin remarks
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
 }
 
 type Label struct {

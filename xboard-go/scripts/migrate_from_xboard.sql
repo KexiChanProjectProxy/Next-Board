@@ -81,6 +81,7 @@ ON DUPLICATE KEY UPDATE plan_id=plan_id;
 -- ====================
 -- Convert Xboard users to Next-Board users
 -- Note: Password hashes should be compatible if both use bcrypt
+-- Includes: balance, commission, tokens, and login tracking
 
 INSERT INTO users (
     email,
@@ -90,6 +91,15 @@ INSERT INTO users (
     telegram_chat_id,
     telegram_linked_at,
     banned,
+    balance,
+    discount,
+    commission_type,
+    commission_rate,
+    commission_balance,
+    token,
+    last_login_at,
+    last_login_ip,
+    remarks,
     created_at,
     updated_at
 )
@@ -107,6 +117,21 @@ SELECT
         ELSE NULL
     END as telegram_linked_at,
     u.banned,
+    u.balance,
+    u.discount,
+    u.commission_type,
+    u.commission_rate,
+    u.commission_balance,
+    u.token,
+    CASE
+        WHEN u.last_login_at > 0 THEN FROM_UNIXTIME(u.last_login_at)
+        ELSE NULL
+    END as last_login_at,
+    CASE
+        WHEN u.last_login_ip > 0 THEN INET_NTOA(u.last_login_ip)
+        ELSE NULL
+    END as last_login_ip,
+    u.remarks,
     FROM_UNIXTIME(u.created_at),
     FROM_UNIXTIME(u.updated_at)
 FROM xboard.v2_user u

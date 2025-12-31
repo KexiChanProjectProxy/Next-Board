@@ -81,6 +81,11 @@ XBOARD_DOCKER=xboard-app \
 
 ✅ **Migrated:**
 - Users (email, passwords, roles, plan assignments)
+- User balances and credits (balance, commission_balance, discount)
+- User API tokens (for authentication)
+- User commission settings (commission_type, commission_rate)
+- Login tracking (last_login_at, last_login_ip)
+- User remarks and admin notes
 - Plans (quota, reset periods)
 - Server Groups → Labels (with automatic mapping)
 - Nodes (all protocol types: vmess, vless, trojan, shadowsocks, hysteria)
@@ -92,7 +97,6 @@ XBOARD_DOCKER=xboard-app \
 - Historical traffic statistics
 - Orders and payments
 - Tickets and knowledge base
-- User tokens (users need to re-login)
 - Commission logs
 
 ## After Migration
