@@ -21,7 +21,7 @@ NC='\033[0m' # No Color
 
 # Configuration (can be overridden by environment variables)
 XBOARD_DB=${XBOARD_DB:-xboard}
-NEXTBOARD_DB=${NEXTBOARD_DB:-xboard_go}
+NEXTBOARD_DB=${NEXTBOARD_DB:-xboard}  # Target database (Next-Board)
 XBOARD_DOCKER=${XBOARD_DOCKER:-}  # Docker container name (if Xboard is in Docker)
 MYSQL_USER=${MYSQL_USER:-root}
 MYSQL_CMD=${MYSQL_CMD:-mysql}  # Can be 'mysql' or 'mycli' or 'mariadb'

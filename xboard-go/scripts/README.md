@@ -7,8 +7,6 @@
 ```bash
 cd /home/kexi/Next-Board/xboard-go/scripts && \
 XBOARD_DOCKER=your_container_name \
-XBOARD_DB=xboard \
-NEXTBOARD_DB=xboard_go \
 ./migrate.sh
 ```
 
@@ -17,14 +15,15 @@ NEXTBOARD_DB=xboard_go \
 docker ps | grep xboard
 ```
 
-**Note**: The script automatically detects MariaDB in Docker and uses `mariadb-dump` and `mariadb` commands instead of `mysqldump` and `mysql`.
+**Note**:
+- The script automatically detects MariaDB in Docker and uses `mariadb-dump` and `mariadb` commands
+- Default database name is `xboard` for both source and target
+- If you need different names, set: `XBOARD_DB=source_name NEXTBOARD_DB=target_name`
 
 ### If Xboard is Local (Not Docker)
 
 ```bash
 cd /home/kexi/Next-Board/xboard-go/scripts && \
-XBOARD_DB=xboard \
-NEXTBOARD_DB=xboard_go \
 ./migrate.sh
 ```
 
@@ -49,7 +48,7 @@ The script automatically:
 |----------|---------|-------------|
 | `XBOARD_DOCKER` | (empty) | Docker container name if Xboard runs in Docker |
 | `XBOARD_DB` | `xboard` | Source database name |
-| `NEXTBOARD_DB` | `xboard_go` | Target database name |
+| `NEXTBOARD_DB` | `xboard` | Target database name |
 | `MYSQL_USER` | `root` | MySQL username |
 | `MYSQL_CMD` | `mysql` | MySQL client (`mysql` or `mycli`) |
 
@@ -68,8 +67,6 @@ NEXTBOARD_DB=nextboard \
 
 ```bash
 MYSQL_CMD=mycli \
-XBOARD_DB=xboard \
-NEXTBOARD_DB=xboard_go \
 ./migrate.sh
 ```
 
@@ -153,7 +150,7 @@ ls -lh ./backups/
 
 ### Rollback migration
 ```bash
-mysql -uroot -p xboard_go < ./backups/xboard_go_backup_YYYYMMDD_HHMMSS.sql
+mysql -uroot -p xboard < ./backups/xboard_backup_YYYYMMDD_HHMMSS.sql
 ```
 
 ### Manual migration (if script fails)
@@ -168,7 +165,7 @@ After migration, verify data in Next-Board:
 
 ```sql
 -- Connect to Next-Board database
-mysql -uroot -p xboard_go
+mysql -uroot -p xboard
 
 -- Check counts
 SELECT 'Users' as Item, COUNT(*) FROM users
