@@ -181,8 +181,8 @@ if [ -n "$XBOARD_DOCKER" ]; then
         docker exec "$XBOARD_DOCKER" mariadb-dump -u"$MYSQL_USER" "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
     fi
 else
-    # Dump from local
-    $MYSQLDUMP_CMD -u"$MYSQL_USER" -p "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
+    # Dump from local (no password for Unix socket)
+    $MYSQLDUMP_CMD -u"$MYSQL_USER" "$XBOARD_DB" > "$BACKUP_DIR/${XBOARD_DB}_backup_${TIMESTAMP}.sql"
 fi
 
 if [ $? -eq 0 ]; then
@@ -193,8 +193,8 @@ else
 fi
 
 echo "Backing up $NEXTBOARD_DB (if exists)..."
-if mysql -u"$MYSQL_USER" -p -e "USE $NEXTBOARD_DB;" 2>/dev/null; then
-    mysqldump -u"$MYSQL_USER" -p "$NEXTBOARD_DB" > "$BACKUP_DIR/${NEXTBOARD_DB}_backup_${TIMESTAMP}.sql"
+if mysql -u"$MYSQL_USER" -e "USE $NEXTBOARD_DB;" 2>/dev/null; then
+    mysqldump -u"$MYSQL_USER" "$NEXTBOARD_DB" > "$BACKUP_DIR/${NEXTBOARD_DB}_backup_${TIMESTAMP}.sql"
     echo -e "${GREEN}✓${NC} Next-Board backup saved: $BACKUP_DIR/${NEXTBOARD_DB}_backup_${TIMESTAMP}.sql"
 else
     echo -e "${YELLOW}⚠${NC} Next-Board database doesn't exist yet (this is OK)"
@@ -460,14 +460,14 @@ echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Migration cancelled"
     echo "You can run it manually later with:"
-    echo "  mysql -u$MYSQL_USER -p < $MIGRATION_SQL"
+    echo "  mysql -u$MYSQL_USER < $MIGRATION_SQL"
     exit 0
 fi
 
 echo "Running migration..."
 echo ""
 
-if mysql -u"$MYSQL_USER" -p < "$MIGRATION_SQL"; then
+if mysql -u"$MYSQL_USER" < "$MIGRATION_SQL"; then
     echo ""
     echo -e "${GREEN}✓${NC} Migration completed successfully!"
 else
@@ -475,7 +475,7 @@ else
     echo -e "${RED}✗${NC} Migration failed!"
     echo ""
     echo "To rollback, run:"
-    echo "  mysql -u$MYSQL_USER -p $NEXTBOARD_DB < $BACKUP_DIR/${NEXTBOARD_DB}_backup_${TIMESTAMP}.sql"
+    echo "  mysql -u$MYSQL_USER $NEXTBOARD_DB < $BACKUP_DIR/${NEXTBOARD_DB}_backup_${TIMESTAMP}.sql"
     exit 1
 fi
 
