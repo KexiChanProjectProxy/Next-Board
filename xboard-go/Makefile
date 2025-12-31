@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 .PHONY: help build run test migrate-up migrate-down clean
 
 help:
